@@ -12,7 +12,7 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
-  - _EDITION_POLYCHROME
+  - _EDITION_REGULAR
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -47,7 +47,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _DisplacementIntensity: 0
-    - _EDITION: 1
+    - _EDITION: 0
     - _Frequency: 1
     - _Power: 0.25
     - _QueueControl: 0
@@ -58,6 +58,7 @@ Material:
     - _poly_power: 0.2
     - _yDirection: 1
     m_Colors:
+    - White: {r: 1, g: 1, b: 1, a: 1}
     - _Rotation: {r: 0, g: 0, b: 0, a: 0}
     - _Tiling: {r: 0, g: 0, b: 0, a: 0}
     - _Vector2: {r: -0.16, g: 0, b: 0, a: 0}
