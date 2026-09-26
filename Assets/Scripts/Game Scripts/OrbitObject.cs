@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class OrbitObject : MonoBehaviour
@@ -13,6 +14,11 @@ public class OrbitObject : MonoBehaviour
     
     [Tooltip("Check this to make the object always face the target while orbiting.")]
     public bool lookAtTarget = true;
+
+    private void Awake()
+    {
+        target = transform;
+    }
 
     void Update()
     {

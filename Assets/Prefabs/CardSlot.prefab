@@ -53,6 +53,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2346250072548168058}
     m_Modifications:
+    - target: {fileID: 133173175211647385, guid: 38aa6ba35be5144dc931edb1e6e43818, type: 3}
+      propertyPath: yThreshold
+      value: -1.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 133173175211647385, guid: 38aa6ba35be5144dc931edb1e6e43818, type: 3}
+      propertyPath: targetLinePrefab
+      value: 
+      objectReference: {fileID: 9067576585477934248, guid: 02c0a59d8684c9949a4b419bad66e31b, type: 3}
+    - target: {fileID: 133173175211647385, guid: 38aa6ba35be5144dc931edb1e6e43818, type: 3}
+      propertyPath: bezierArrowPrefab
+      value: 
+      objectReference: {fileID: 775163376886145894, guid: 96a3d9a7abc422749b6501f69ba9377c, type: 3}
     - target: {fileID: 6964580406683806308, guid: 38aa6ba35be5144dc931edb1e6e43818, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5

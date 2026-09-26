@@ -78,6 +78,13 @@ public class CardVisual : MonoBehaviour
         canvas = GetComponent<Canvas>();
         shadowCanvas = visualShadow.GetComponent<Canvas>();
 
+        // Apply the visual data from the injected CardDataSO
+        if (parentCard.cardData != null && cardImage != null)
+        {
+            // You can also add references for the background sprite or cost text here later!
+            cardImage.sprite = parentCard.cardData.image; 
+        }
+        
         //Event Listening
         parentCard.PointerEnterEvent.AddListener(PointerEnter);
         parentCard.PointerExitEvent.AddListener(PointerExit);

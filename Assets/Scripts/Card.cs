@@ -22,6 +22,11 @@ public class Card : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHand
     public float selectionOffset = 50;
     private float pointerDownTime;
     private float pointerUpTime;
+    
+    [Header("Arrow Spawning")]
+    [SerializeField] private float yThreshold;
+    [SerializeField] private GameObject targetLinePrefab;
+    private SimpleTargetLine spawnedLine;
 
     [Header("Visual")]
     [SerializeField] private GameObject cardVisualPrefab;
@@ -41,6 +46,8 @@ public class Card : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHand
     [HideInInspector] public UnityEvent<Card> EndDragEvent;
     [HideInInspector] public UnityEvent<Card, bool> SelectEvent;
 
+    public CardDataSO cardData;
+    
     void Start()
     {
         canvas = GetComponentInParent<Canvas>();
@@ -64,7 +71,35 @@ public class Card : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHand
             Vector2 direction = (targetPosition - (Vector2)transform.position).normalized;
             Vector2 velocity = direction * Mathf.Min(moveSpeedLimit, Vector2.Distance(transform.position, targetPosition) / Time.deltaTime);
             transform.Translate(velocity * Time.deltaTime);
+
+            if (transform.position.y >= yThreshold && spawnedLine == null)
+            {
+                if (targetLinePrefab != null)
+                {
+                    GameObject lineObj = Instantiate(targetLinePrefab, transform.position, Quaternion.identity, canvas.transform);
+                    spawnedLine = lineObj.GetComponent<SimpleTargetLine>();
+                    
+                    spawnedLine.currentCardData = cardData;
+                }
+
+                imageComponent.enabled = false;
+                if (cardVisual != null) 
+                    cardVisual.gameObject.SetActive(false);
+            }
+            else if (transform.position.y < yThreshold && spawnedLine != null)
+            {
+                Destroy(spawnedLine.gameObject);
+                
+                imageComponent.enabled = true;
+                if (cardVisual != null) 
+                    cardVisual.gameObject.SetActive(true);
+            }
         }
+    }
+    
+    public void Setup(CardDataSO data)
+    {
+        cardData = data;
     }
 
     void ClampPosition()
@@ -99,6 +134,27 @@ public class Card : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHand
         canvas.GetComponent<GraphicRaycaster>().enabled = true;
         imageComponent.raycastTarget = true;
 
+        if (spawnedLine != null)
+        {
+            // Try to execute the card's effect on the grid
+            bool cardPlayedSuccessfully = spawnedLine.TryPlayCard();
+            
+            if (cardPlayedSuccessfully)
+            {
+                // If it successfully removed grid blocks, discard this card from the hand!
+                HorizontalCardHolder holder = GetComponentInParent<HorizontalCardHolder>();
+                if (holder != null)
+                {
+                    holder.DiscardCard(this);
+                }
+            }
+
+            Destroy(spawnedLine.gameObject);
+            imageComponent.enabled = true;
+            if (cardVisual != null) 
+                cardVisual.gameObject.SetActive(true);
+        }
+
         StartCoroutine(FrameWait());
 
         IEnumerator FrameWait()
@@ -107,7 +163,7 @@ public class Card : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHand
             wasDragged = false;
         }
     }
-
+    
     public void OnPointerEnter(PointerEventData eventData)
     {
         PointerEnterEvent.Invoke(this);

@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
@@ -16,32 +15,30 @@ public class HorizontalCardHolder : MonoBehaviour
     private RectTransform rect;
 
     [Header("Spawn Settings")]
-    [SerializeField] private int cardsToSpawn = 7;
+    [SerializeField] private int startingHandSize = 5;
     public List<Card> cards;
 
+    [Header("Deck System")]
+    [SerializeField] private List<CardDataSO> startingDeck = new List<CardDataSO>();
+    public List<CardDataSO> drawPile = new List<CardDataSO>();
+    public List<CardDataSO> discardPile = new List<CardDataSO>();
+    
     bool isCrossing = false;
     [SerializeField] private bool tweenCardReturn = true;
 
+    // State Machine
     void Start()
     {
-        for (int i = 0; i < cardsToSpawn; i++)
-        {
-            Instantiate(slotPrefab, transform);
-        }
-
         rect = GetComponent<RectTransform>();
-        cards = GetComponentsInChildren<Card>().ToList();
+        cards = new List<Card>();
 
-        int cardCount = 0;
+        drawPile = new List<CardDataSO>(startingDeck);
 
-        foreach (Card card in cards)
+        ShuffleDeck();
+
+        for (int i = 0; i < startingHandSize; i++)
         {
-            card.PointerEnterEvent.AddListener(CardPointerEnter);
-            card.PointerExitEvent.AddListener(CardPointerExit);
-            card.BeginDragEvent.AddListener(BeginDrag);
-            card.EndDragEvent.AddListener(EndDrag);
-            card.name = cardCount.ToString();
-            cardCount++;
+            DrawCard();
         }
 
         StartCoroutine(Frame());
@@ -49,11 +46,96 @@ public class HorizontalCardHolder : MonoBehaviour
         IEnumerator Frame()
         {
             yield return new WaitForSecondsRealtime(.1f);
-            for (int i = 0; i < cards.Count; i++)
+            UpdateVisualIndexes();
+        }
+    }
+
+    public void DrawCard()
+    {
+        if (drawPile.Count == 0)
+        {
+            if (discardPile.Count > 0)
             {
-                if (cards[i].cardVisual != null)
-                    cards[i].cardVisual.UpdateIndex(transform.childCount);
+                ShuffleDiscardIntoDraw();
             }
+            else
+            {
+                return; 
+            }
+        }
+
+        CardDataSO drawnCardData = drawPile[0];
+        drawPile.RemoveAt(0);
+
+        GameObject newSlot = Instantiate(slotPrefab, transform);
+        Card newCard = newSlot.GetComponentInChildren<Card>();
+        
+        // Inject the data into the newly spawned card
+        newCard.Setup(drawnCardData);
+        
+        SetupCardListeners(newCard, cards.Count);
+        cards.Add(newCard);
+        
+        UpdateVisualIndexes();
+    }
+
+    public void DiscardCard(Card cardToDiscard)
+    {
+        if (cards.Contains(cardToDiscard))
+        {
+            cards.Remove(cardToDiscard);
+            
+            // Re-add the card's data to the discard pile
+            discardPile.Add(cardToDiscard.cardData); 
+            
+            RemoveCardListeners(cardToDiscard);
+            Destroy(cardToDiscard.transform.parent.gameObject);
+            
+            UpdateVisualIndexes();
+        }
+    }
+
+    public void ShuffleDiscardIntoDraw()
+    {
+        drawPile.AddRange(discardPile);
+        discardPile.Clear();
+        ShuffleDeck();
+    }
+
+    public void ShuffleDeck()
+    {
+        for (int i = 0; i < drawPile.Count; i++)
+        {
+            CardDataSO temp = drawPile[i];
+            int randomIndex = UnityEngine.Random.Range(i, drawPile.Count);
+            drawPile[i] = drawPile[randomIndex];
+            drawPile[randomIndex] = temp;
+        }
+    }
+
+    private void SetupCardListeners(Card card, int index)
+    {
+        card.PointerEnterEvent.AddListener(CardPointerEnter);
+        card.PointerExitEvent.AddListener(CardPointerExit);
+        card.BeginDragEvent.AddListener(BeginDrag);
+        card.EndDragEvent.AddListener(EndDrag);
+        card.name = index.ToString();
+    }
+
+    private void RemoveCardListeners(Card card)
+    {
+        card.PointerEnterEvent.RemoveListener(CardPointerEnter);
+        card.PointerExitEvent.RemoveListener(CardPointerExit);
+        card.BeginDragEvent.RemoveListener(BeginDrag);
+        card.EndDragEvent.RemoveListener(EndDrag);
+    }
+
+    private void UpdateVisualIndexes()
+    {
+        for (int i = 0; i < cards.Count; i++)
+        {
+            if (cards[i].cardVisual != null)
+                cards[i].cardVisual.UpdateIndex(transform.childCount);
         }
     }
 
@@ -93,9 +175,7 @@ public class HorizontalCardHolder : MonoBehaviour
         {
             if (hoveredCard != null)
             {
-                Destroy(hoveredCard.transform.parent.gameObject);
-                cards.Remove(hoveredCard);
-
+                DiscardCard(hoveredCard);
             }
         }
 
@@ -156,10 +236,7 @@ public class HorizontalCardHolder : MonoBehaviour
         cards[index].cardVisual.Swap(swapIsRight ? -1 : 1);
 
         //Updated Visual Indexes
-        foreach (Card card in cards)
-        {
-            card.cardVisual.UpdateIndex(transform.childCount);
-        }
+        UpdateVisualIndexes();
     }
 
 }
